@@ -1,0 +1,4 @@
+/chromeos/
+/storage/
+*.swp
+.DS_Store

@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+.dockerignore
+license.md
+readme.md
+kubernetes.yml
+compose.yml
+chromeos/
+storage/

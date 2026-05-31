@@ -1,0 +1,91 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chromeos-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 64Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chromeos
+  labels:
+    name: chromeos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chromeos
+  template:
+    metadata:
+      labels:
+        app: chromeos
+    spec:
+      containers:
+      - name: chromeos
+        image: forkymcforkface/chromeos
+        env:
+        - name: VERSION
+          value: "stable"
+        - name: DISK_SIZE
+          value: "64G"
+        ports:
+          - containerPort: 8006
+            name: http
+            protocol: TCP
+          - containerPort: 5900
+            name: vnc
+            protocol: TCP
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /storage
+          name: storage
+        - mountPath: /dev/kvm
+          name: dev-kvm
+        - mountPath: /dev/net/tun
+          name: dev-tun
+        - mountPath: /dev/dri
+          name: dev-dri
+      terminationGracePeriodSeconds: 120
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: chromeos-pvc
+      - hostPath:
+          path: /dev/kvm
+        name: dev-kvm
+      - hostPath:
+          path: /dev/net/tun
+          type: CharDevice
+        name: dev-tun
+      - hostPath:
+          path: /dev/dri
+        name: dev-dri
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromeos
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: http
+      port: 8006
+      protocol: TCP
+      targetPort: 8006
+    - name: vnc
+      port: 5900
+      protocol: TCP
+      targetPort: 5900
+  selector:
+    app: chromeos
+  type: ClusterIP

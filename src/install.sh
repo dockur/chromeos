@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+: "${VERSION:="stable"}"
+: "${MANIFEST_URL:="https://dl.google.com/dl/edgedl/chromeos/recovery/cloudready_recovery2.json"}"
+
+VERSION_LC="${VERSION,,}"
+VERSION_FILTER=""
+
+# VERSION can be a channel name (stable/beta/ltc/ltr) or a direct image URL.
+if [[ "$VERSION_LC" =~ ^https?:// ]]; then
+  url="$VERSION"
+  VERSION_LC="custom"
+else
+  case "$VERSION_LC" in
+    stable)  VERSION_FILTER="STABLE" ;;
+    ltc)     VERSION_FILTER="LTC" ;;
+    ltr)     VERSION_FILTER="LTR" ;;
+    beta)    VERSION_FILTER="BETA" ;;
+    *)       error "Unknown VERSION=$VERSION (use: stable, ltc, ltr, beta, or a direct URL)" && exit 64 ;;
+  esac
+fi
+
+FLEX_DIR="$STORAGE/flex"
+DATA_IMG="$FLEX_DIR/data.img"
+
+if ! makeDir "$FLEX_DIR"; then
+  error "Failed to create directory \"$FLEX_DIR\"!" && exit 33
+fi
+
+# A populated GPT (EFI PART magic at LBA 1) signals "Flex is already installed" — no separate flag file.
+if [ -s "$DATA_IMG" ] && dd if="$DATA_IMG" bs=512 skip=1 count=1 2>/dev/null | head -c 8 | grep -q "EFI PART"; then
+
+  # Toggle /syslinux/default.cfg between chromeos-vhd (verified) and chromeos-hd (rw rootfs) via mtools — no mount/loop/SYS_ADMIN needed.
+  if [[ "${DEV_MODE:-}" =~ ^[YyNn] ]]; then
+    set +e
+    efi_start=$(sfdisk -d "$DATA_IMG" 2>/dev/null | awk -F'[ =,]+' '/EFI-SYSTEM/ {for(i=1;i<=NF;i++) if($i=="start") print $(i+1)}')
+    if [ -n "$efi_start" ]; then
+      efi_off=$((efi_start * 512))
+      tmp=$(mktemp)
+      mtype -i "$DATA_IMG@@$efi_off" ::/syslinux/default.cfg > "$tmp" 2>/dev/null
+      if [ -s "$tmp" ]; then
+        if [[ "${DEV_MODE:-}" =~ ^[Yy] ]] && grep -q 'chromeos-vhd' "$tmp"; then
+          sed -i 's|chromeos-vhd|chromeos-hd|g' "$tmp"
+          mcopy -o -i "$DATA_IMG@@$efi_off" "$tmp" ::/syslinux/default.cfg 2>/dev/null && \
+            info "DEV_MODE=Y: switched boot default to chromeos-hd.A"
+        elif [[ "${DEV_MODE:-}" =~ ^[Nn] ]] && grep -q 'chromeos-hd' "$tmp"; then
+          sed -i 's|chromeos-hd|chromeos-vhd|g' "$tmp"
+          mcopy -o -i "$DATA_IMG@@$efi_off" "$tmp" ::/syslinux/default.cfg 2>/dev/null && \
+            info "DEV_MODE=N: switched boot default to chromeos-vhd.A"
+        fi
+      fi
+      rm -f "$tmp"
+    fi
+    set -e
+  fi
+
+  info "Booting ChromeOS Flex from data disk."
+  BOOT="none"
+  STORAGE="$FLEX_DIR"
+  return 0
+fi
+
+if [ -s "/boot.img" ]; then
+  info "Using custom ChromeOS image from /boot.img"
+  BOOT="/boot.img"
+  STORAGE="$FLEX_DIR"
+  BOOT_MODE="uefi"
+  BOOT_DESC=" ChromeOS Flex (custom)"
+  return 0
+fi
+
+if [ -s "$FLEX_DIR/boot.img" ]; then
+  info "Reusing existing installer at $FLEX_DIR/boot.img"
+  BOOT="$FLEX_DIR/boot.img"
+  STORAGE="$FLEX_DIR"
+  BOOT_MODE="uefi"
+  return 0
+fi
+
+if [ -n "$VERSION_FILTER" ]; then
+  info "Fetching ChromeOS Flex manifest ($VERSION_LC channel)..."
+  html "Fetching manifest..."
+
+  manifest="$FLEX_DIR/manifest.json"
+  rm -f "$manifest"
+
+  if ! wget -q --timeout=30 -O "$manifest" "$MANIFEST_URL"; then
+    error "Failed to download manifest from $MANIFEST_URL" && exit 60
+  fi
+
+  if [ ! -s "$manifest" ]; then
+    error "Manifest is empty!" && exit 60
+  fi
+
+  url=$(jq -r --arg c "$VERSION_FILTER" '
+    [ .[] | select(.channel == $c and (.url // "") != "") ]
+    | sort_by(.version | split(".") | map(tonumber? // 0))
+    | last | .url // empty
+  ' "$manifest" 2>/dev/null || echo "")
+
+  if [ -z "$url" ]; then
+    error "No ChromeOS Flex image found for channel \"$VERSION_FILTER\"" && exit 60
+  fi
+
+  version=$(jq -r --arg c "$VERSION_FILTER" '
+    [ .[] | select(.channel == $c) ]
+    | sort_by(.version | split(".") | map(tonumber? // 0))
+    | last | .version // "unknown"
+  ' "$manifest")
+
+  zipsize=$(jq -r --arg c "$VERSION_FILTER" '
+    [ .[] | select(.channel == $c) ]
+    | sort_by(.version | split(".") | map(tonumber? // 0))
+    | last | .zipfilesize // 0
+  ' "$manifest")
+
+  info "Selected ChromeOS Flex $version ($VERSION_LC), $(numfmt --to=iec --suffix=B "${zipsize:-0}") download"
+else
+  version="custom"
+  info "Downloading custom ChromeOS image from $url"
+fi
+
+base="$(basename "${url%%\?*}")"
+zip_dest="$FLEX_DIR/$base"
+
+if [ -t 1 ]; then
+  PROGRESS_FLAG="--progress=bar:noscroll"
+else
+  PROGRESS_FLAG="--progress=dot:giga"
+fi
+
+html "Downloading ChromeOS Flex $version..."
+info "Downloading $base..."
+
+rm -f "$zip_dest"
+rc=0
+wget "$url" -O "$zip_dest" --continue --timeout=30 --no-http-keep-alive --show-progress "$PROGRESS_FLAG" -q || rc=$?
+
+if (( rc != 0 )) || [ ! -s "$zip_dest" ]; then
+  error "Failed to download ChromeOS Flex image (wget rc=$rc)" && exit 60
+fi
+
+# Catch silent truncation: a valid Flex recovery zip is always >1GB; <100MB means CDN error page or partial download.
+actual_size=$(stat -c%s "$zip_dest")
+if [ "$actual_size" -lt 100000000 ]; then
+  error "Downloaded file is suspiciously small ($actual_size bytes)" && exit 60
+fi
+
+info "Extracting $base..."
+html "Extracting image..."
+
+tmp="$FLEX_DIR/extract"
+rm -rf "$tmp"
+mkdir -p "$tmp"
+
+if ! 7z x -y "$zip_dest" -o"$tmp" > /dev/null; then
+  error "Failed to extract $base" && exit 32
+fi
+
+img=$(find "$tmp" -type f -iname "*.bin" -print -quit)
+
+if [ ! -s "$img" ]; then
+  rm -rf "$tmp"
+  error "Could not find ChromeOS Flex image in archive" && exit 32
+fi
+
+mv "$img" "$FLEX_DIR/boot.img"
+rm -rf "$tmp"
+rm -f "$zip_dest"
+
+setOwner "$FLEX_DIR/boot.img" || error "Failed to set owner on installer image"
+
+BOOT_MODE="uefi"
+BOOT="$FLEX_DIR/boot.img"
+STORAGE="$FLEX_DIR"
+BOOT_DESC=" ChromeOS Flex $version"
+
+info "ChromeOS Flex installer ready at $BOOT"
+return 0
