@@ -21,6 +21,7 @@ Built on the same [qemus/qemu](https://github.com/qemus/qemu) base as [dockur/wi
  - KVM acceleration
  - Web-based viewer
  - Auto-detects the host GPU render node
+ - Audio support
 
 ## Usage 🐳
 
@@ -207,6 +208,17 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
   ```
 
   This sends a no-op `pause` key event to the VM every 4 minutes, keeping the idle timer reset. Alternatively, install the "Keep Awake" extension from the Chrome Web Store inside Flex.
+
+### How do I enable audio?
+
+  Audio is off by default. To stream the guest's audio to the browser, set:
+
+  ```yaml
+  environment:
+    AUDIO: "Y"
+  ```
+
+  Then tick the **Audio** box under Settings → Advanced in the noVNC toolbar. Audio only streams while that box is checked, so it adds no bandwidth when unused.
 
 ### How do I reduce bandwidth for remote noVNC sessions?
 
