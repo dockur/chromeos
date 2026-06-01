@@ -10,26 +10,52 @@ BOOT_DESC=" ChromeOS Flex (${VERSION,,})"
 
 : "${BOOT_MODE:="uefi"}"
 
-if [[ "${GPU:-}" =~ ^[Yy] ]]; then
-  if [ -z "${RENDERNODE:-}" ]; then
-    compgen -G "/usr/lib/*/libEGL_nvidia.so.0" >/dev/null && nvidia_egl=1 || nvidia_egl=
-    for node in /dev/dri/renderD*; do
-      { exec 3<"$node"; } 2>/dev/null || continue
-      exec 3<&-
-      dev="/sys/class/drm/${node##*/}/device"
-      if [ "$(cat "$dev/vendor" 2>/dev/null)" != "0x10de" ]; then
-        : "${RENDERNODE:=$node}"
-      elif [ -n "$nvidia_egl" ] && compgen -G "$dev/drm/card*" >/dev/null; then
-        RENDERNODE="$node"; break
-      elif [ -n "$nvidia_egl" ]; then
-        info "Nvidia GPU at $node needs nvidia-drm modeset=1 on the host; skipping."
-      fi
-    done
-  fi
-  if [ -z "${RENDERNODE:-}" ] || [ ! -c "${RENDERNODE:-/dev/null}" ]; then
-    info "GPU=Y requested but no usable render node found; falling back to software rendering."
-    GPU=""
-  fi
+gpu="${GPU:-}"
+gpu_vendor=""
+case "${gpu,,}" in
+  ""|n|no|0|false|off) GPU="" ;;
+  y|yes|1|true|on|auto) GPU="Y" ;;
+  intel) GPU="Y"; gpu_vendor="0x8086" ;;
+  amd) GPU="Y"; gpu_vendor="0x1002" ;;
+  nvidia) GPU="Y"; gpu_vendor="0x10de" ;;
+  *) info "Unknown GPU value \"$gpu\"; treating it as auto."; GPU="Y" ;;
+esac
+
+if [ -n "$GPU" ] && [ -z "${RENDERNODE:-}" ]; then
+  compgen -G "/usr/lib/*/libEGL_nvidia.so.0" >/dev/null && nvidia_egl=1 || nvidia_egl=
+  for node in /dev/dri/renderD*; do
+    { exec 3<"$node"; } 2>/dev/null || continue
+    exec 3<&-
+    dev="/sys/class/drm/${node##*/}/device"
+    vid=$(cat "$dev/vendor" 2>/dev/null)
+    if [ -n "$gpu_vendor" ] && [ "$vid" != "$gpu_vendor" ]; then
+      continue
+    fi
+    if [ "$vid" != "0x10de" ]; then
+      : "${RENDERNODE:=$node}"
+    elif [ -z "$nvidia_egl" ]; then
+      info "Nvidia GPU at $node has no graphics capability; run the container with \"--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all\"."
+    elif ! compgen -G "$dev/drm/card*" >/dev/null; then
+      info "Nvidia GPU at $node needs nvidia-drm modeset=1 on the host; add \"options nvidia_drm modeset=1\" and reboot."
+    else
+      RENDERNODE="$node"; break
+    fi
+  done
+fi
+
+if [ -n "$GPU" ] && { [ -z "${RENDERNODE:-}" ] || [ ! -c "${RENDERNODE:-/dev/null}" ]; }; then
+  info "No usable ${gpu_vendor:+$gpu }GPU render node found; falling back to software rendering."
+  GPU=""
+fi
+
+if [ -n "$GPU" ]; then
+  case "$(cat "/sys/class/drm/${RENDERNODE##*/}/device/vendor" 2>/dev/null)" in
+    0x8086) gpu_name="Intel" ;;
+    0x1002) gpu_name="AMD" ;;
+    0x10de) gpu_name="Nvidia" ;;
+    *) gpu_name="GPU" ;;
+  esac
+  info "Hardware rendering on $gpu_name render node $RENDERNODE."
 fi
 
 : "${FORCE_HOST_CURSOR:="Y"}"

@@ -162,14 +162,15 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
 
   The container expects the host's `/dev/dri/` to be bind-mounted in. At startup, the entrypoint scans for a usable render node and hands it to QEMU as the VirGL backend (`-display egl-headless,rendernode=...` + `virtio-vga-gl`). Both the `volumes: - /dev/dri:/dev/dri:rw` mount and the `device_cgroup_rules: - "c 226:* rwm"` rule in the example compose are required for this. Intel and AMD render nodes work out of the box; for Nvidia see below. If no usable render node is found, the container falls back to software rendering.
 
-  To turn GPU acceleration off (e.g. for a debugging session):
+  The `GPU` setting accepts:
 
-  ```yaml
-  environment:
-    GPU: "N"
-  ```
+  | Value | Effect |
+  |-------|--------|
+  | `Y` / `auto` | Auto-detect (default); prefers a ready Nvidia node, otherwise Intel/AMD |
+  | `N` | Off — software rendering (3–15 fps) |
+  | `intel` / `amd` / `nvidia` | Force a specific vendor, useful on multi-GPU hosts |
 
-  With GPU off, the UI runs at 3–15 fps.
+  For finer control, set `RENDERNODE` to a specific node (e.g. `/dev/dri/renderD128`). On a miss the container logs exactly what was found and what to fix, then falls back to software rendering.
 
 ### How do I use an Nvidia GPU?
 
@@ -193,7 +194,7 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
         - /dev/dri:/dev/dri:rw
   ```
 
-  Or with the CLI: add `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all`. The render node is auto-detected by vendor, so no card-specific configuration is needed. If both an Nvidia and an Intel/AMD GPU are present, the Nvidia card is preferred once its EGL libraries are available; set `RENDERNODE` to override.
+  Or with the CLI: add `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all`. The render node is auto-detected by vendor, so no card-specific configuration is needed. If both an Nvidia and an Intel/AMD GPU are present, the Nvidia card is preferred once its EGL libraries are available; force the choice either way with `GPU: "nvidia"` / `GPU: "intel"`, or pin a node with `RENDERNODE`.
 
 ### How does the cursor work?
 
