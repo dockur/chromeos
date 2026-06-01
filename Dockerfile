@@ -25,12 +25,14 @@ RUN set -eu && \
       -e 's| -vnc :$port,websocket=$WSS_PORT"| -vnc :$port,websocket=$WSS_PORT${LOSSY_OPT:-}"|' \
       -e 's| -vnc :$port"| -vnc :$port${LOSSY_OPT:-}"|' \
       /run/display.sh && \
+    sed -i 's|if \[\[ "$CPU_VENDOR" != "GenuineIntel" \]\]; then|if false; then|' /run/display.sh && \
     sed -i 's| -device usb-tablet||' /run/config.sh && \
     sed -i 's@USB_OPTS="-device $USB"@& \&\& { [[ "${TABLET:-Y}" =~ ^[Yy] ]] \&\& USB_OPTS+=" -device usb-tablet" || USB_OPTS+=" -device usb-mouse"; }@' /run/config.sh && \
     grep -q 'LOSSY_OPT' /run/display.sh || { echo "patch failed: LOSSY_OPT not injected into display.sh" >&2; exit 1; }
 RUN set -eu && \
     [ "$(grep -c 'LOSSY_OPT' /run/display.sh)" -ge 4 ] || { echo "patch failed: expected 4 LOSSY_OPT sites in display.sh" >&2; exit 1; } && \
-    grep -q 'usb-mouse' /run/config.sh || { echo "patch failed: TABLET conditional not injected into config.sh" >&2; exit 1; }
+    grep -q 'usb-mouse' /run/config.sh || { echo "patch failed: TABLET conditional not injected into config.sh" >&2; exit 1; } && \
+    ! grep -q 'GenuineIntel' /run/display.sh || { echo "patch failed: GenuineIntel gate not removed from display.sh" >&2; exit 1; }
 
 VOLUME /storage
 EXPOSE 5900 8006

@@ -13,14 +13,14 @@ ChromeOS Flex inside a Docker container.
 Built on the same [qemus/qemu](https://github.com/qemus/qemu) base as [dockur/windows](https://github.com/dockur/windows) and [dockur/macos](https://github.com/dockur/macos), following their conventions. It started as a way to test things in ChromeOS Flex after years of running dockur/macos.
 
 > [!IMPORTANT]
-> For best performance, run on an Intel host with `/dev/dri/` exposed. GPU acceleration uses the QEMU egl-headless path, which the base image enables only on Intel CPUs. On other hosts it falls back to software rendering, which works but is slow.
+> For best performance, run on a host with a GPU and `/dev/dri/` exposed. GPU acceleration uses the QEMU egl-headless path: Intel and AMD render nodes go through the open-source Mesa driver, Nvidia through its proprietary driver (see the FAQ). Without a usable GPU it falls back to software rendering, which works but is slow.
 
 ## Features ✨
 
  - Automatic download
  - KVM acceleration
  - Web-based viewer
- - Auto-detects the host GPU render node
+ - Auto-detects the host GPU (Intel, AMD, or Nvidia)
  - Audio support
 
 ## Usage 🐳
@@ -160,7 +160,7 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
 
 ### How does GPU acceleration work?
 
-  The container expects the host's `/dev/dri/` to be bind-mounted in. At startup, the entrypoint scans for a usable render node and hands it to QEMU as the VirGL backend (`-display egl-headless,rendernode=...` + `virtio-vga-gl`). Both the `volumes: - /dev/dri:/dev/dri:rw` mount and the `device_cgroup_rules: - "c 226:* rwm"` rule in the example compose are required for this. The egl-headless path is enabled by the base image only on Intel CPUs; on other hosts the container falls back to software rendering.
+  The container expects the host's `/dev/dri/` to be bind-mounted in. At startup, the entrypoint scans for a usable render node and hands it to QEMU as the VirGL backend (`-display egl-headless,rendernode=...` + `virtio-vga-gl`). Both the `volumes: - /dev/dri:/dev/dri:rw` mount and the `device_cgroup_rules: - "c 226:* rwm"` rule in the example compose are required for this. Intel and AMD render nodes work out of the box; for Nvidia see below. If no usable render node is found, the container falls back to software rendering.
 
   To turn GPU acceleration off (e.g. for a debugging session):
 
@@ -170,6 +170,30 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
   ```
 
   With GPU off, the UI runs at 3–15 fps.
+
+### How do I use an Nvidia GPU?
+
+  Nvidia cards render through the same egl-headless path, with two extra requirements:
+
+  - The host must load `nvidia-drm` with `modeset=1` (add `options nvidia_drm modeset=1` to a file in `/etc/modprobe.d/`, run `update-initramfs -u`, then reboot). Without it the card is invisible to the GBM/EGL backend the container uses.
+  - Run the container with the Nvidia runtime and the `graphics` capability so the driver's EGL libraries are injected:
+
+  ```yaml
+  services:
+    chromeos:
+      image: forkymcforkface/chromeos
+      runtime: nvidia
+      environment:
+        GPU: "Y"
+        NVIDIA_VISIBLE_DEVICES: "all"
+        NVIDIA_DRIVER_CAPABILITIES: "all"
+      device_cgroup_rules:
+        - "c 226:* rwm"
+      volumes:
+        - /dev/dri:/dev/dri:rw
+  ```
+
+  Or with the CLI: add `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all`. The render node is auto-detected by vendor, so no card-specific configuration is needed. If both an Nvidia and an Intel/AMD GPU are present, the Nvidia card is preferred once its EGL libraries are available; set `RENDERNODE` to override.
 
 ### How does the cursor work?
 
