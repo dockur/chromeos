@@ -1,6 +1,6 @@
 services:
   chromeos:
-    image: forkymcforkface/chromeos
+    image: dockurr/chromeos
     container_name: chromeos
     environment:
       VERSION: "stable"
