@@ -1,0 +1,25 @@
+services:
+  chromeos:
+    image: dockurr/chromeos
+    container_name: chromeos
+    environment:
+      VERSION: "stable"
+      GPU: "N"
+      FORCE_HOST_CURSOR: "Y"
+      KEEP_AWAKE: "N"
+      RAM_SIZE: "half"
+      DISK_SIZE: "max"
+      CPU_CORES: "max"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    device_cgroup_rules:
+      - "c 226:* rwm"
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8006:8006
+    volumes:
+      - ./chromeos:/storage
+    restart: always
+    stop_grace_period: 2m
