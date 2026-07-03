@@ -4,10 +4,10 @@
 </div>
 <div align="center">
 
-
 [![Build]][build_url]
-[![Version]][hub_url]
-[![Size]][hub_url]
+[![Version]][tag_url]
+[![Size]][tag_url]
+[![Package]][pkg_url]
 [![Pulls]][hub_url]
 
 </div></h1>
@@ -420,8 +420,11 @@ Special thanks to [forkymcforkface](https://github.com/forkymcforkface), this pr
 
 [build_url]: https://github.com/dockur/chromeos/
 [hub_url]: https://hub.docker.com/r/dockurr/chromeos/
+[tag_url]: https://hub.docker.com/r/dockurr/chromeos/tags
+[pkg_url]: https://github.com/dockur/chromeos/pkgs/container/chromeos
 
 [Build]: https://github.com/dockur/chromeos/actions/workflows/build.yml/badge.svg?v=1
 [Size]: https://img.shields.io/docker/image-size/dockurr/chromeos/latest?color=066da5&label=size&v=1
 [Pulls]: https://img.shields.io/docker/pulls/dockurr/chromeos.svg?style=flat&label=pulls&logo=docker&v=1
 [Version]: https://img.shields.io/docker/v/dockurr/chromeos/latest?arch=amd64&sort=semver&color=066da5&v=1
+[Package]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fipitio.github.io%2Fbackage%2Fdockur%2Fchromeos%2Fchromeos.json&query=%24.downloads&logo=github&style=flat&color=066da5&label=pulls
