@@ -16,11 +16,11 @@ ChromeOS Flex inside a Docker container.
 
 ## Features ✨
 
- - Automatic download
  - KVM acceleration
  - Web-based viewer
  - Audio support
  - GPU acceleration
+ - Automatic download
 
 ## Usage 🐳
 
