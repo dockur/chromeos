@@ -20,7 +20,7 @@ ChromeOS Flex inside a Docker container.
  - KVM acceleration
  - Web-based viewer
  - Audio support
- - GPU acceleration (Intel, AMD, or Nvidia)
+ - GPU acceleration
 
 ## Usage 🐳
 
