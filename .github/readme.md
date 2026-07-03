@@ -63,7 +63,7 @@ docker run -it --rm --name chromeos -e "VERSION=stable" -p 8006:8006 --device=/d
 ##### Kubernetes:
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main/kubernetes.yml
+kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubernetes.yml
 ```
 
 ##### GitHub Codespaces:
