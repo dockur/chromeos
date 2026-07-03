@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: chromeos
-        image: forkymcforkface/chromeos
+        image: dockurr/chromeos
         env:
         - name: VERSION
           value: "stable"
