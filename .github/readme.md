@@ -1,5 +1,9 @@
 <h1 align="center">ChromeOS<br />
 <div align="center">
+<a href="https://github.com/dockur/chromeos/"><img src="https://github.com/dockur/chromeos/raw/master/.github/logo.png" title="Logo" style="max-width:100%;" width="128" /></a>
+</div>
+<div align="center">
+
 
 [![Build]][build_url]
 [![Version]][hub_url]
@@ -10,27 +14,22 @@
 
 ChromeOS Flex inside a Docker container.
 
-Built on the same [qemus/qemu](https://github.com/qemus/qemu) base as [dockur/windows](https://github.com/dockur/windows) and [dockur/macos](https://github.com/dockur/macos), following their conventions. It started as a way to test things in ChromeOS Flex after years of running dockur/macos.
-
-> [!IMPORTANT]
-> For best performance, run on a host with a GPU and `/dev/dri/` exposed. GPU acceleration uses the QEMU egl-headless path: Intel and AMD render nodes go through the open-source Mesa driver, Nvidia through its proprietary driver (see the FAQ). Without a usable GPU it falls back to software rendering, which works but is slow.
-
 ## Features ✨
 
  - Automatic download
  - KVM acceleration
  - Web-based viewer
- - Auto-detects the host GPU (Intel, AMD, or Nvidia)
  - Audio support
+ - GPU acceleration (Intel, AMD, or Nvidia)
 
 ## Usage 🐳
 
-##### Via Docker Compose:
+##### Docker Compose:
 
 ```yaml
 services:
   chromeos:
-    image: forkymcforkface/chromeos
+    image: dockurr/chromeos
     container_name: chromeos
     environment:
       VERSION: "stable"
@@ -55,17 +54,33 @@ services:
     stop_grace_period: 2m
 ```
 
-##### Via Docker CLI:
+##### Docker CLI:
 
 ```bash
-docker run -it --rm --name chromeos -e "VERSION=stable" -p 8006:8006 --device=/dev/kvm --device=/dev/net/tun --device-cgroup-rule="c 226:* rwm" --cap-add NET_ADMIN -v "${PWD:-.}/chromeos:/storage" -v /dev/dri:/dev/dri --stop-timeout 120 docker.io/forkymcforkface/chromeos
+docker run -it --rm --name chromeos -e "VERSION=stable" -p 8006:8006 --device=/dev/kvm --device=/dev/net/tun --device-cgroup-rule="c 226:* rwm" --cap-add NET_ADMIN -v "${PWD:-.}/chromeos:/storage" -v /dev/dri:/dev/dri --stop-timeout 120 docker.io/dockurr/chromeos
 ```
 
-##### Via Kubernetes:
+##### Kubernetes:
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main/kubernetes.yml
 ```
+
+##### GitHub Codespaces:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/dockur/chromeos)
+
+## Requirements ⚙️
+
+ - A Linux host with KVM support, or Docker Desktop / Podman on Windows 11 with nested virtualization enabled.
+ - At least 4 GB of RAM available.
+ - At least 64 GB of free disk space.
+
+> [!NOTE]
+> Docker Desktop on macOS and Windows 10 do not currently provide the required KVM support for this image.
+
+> [!IMPORTANT]
+> For best performance, run on a host with a GPU and `/dev/dri/` exposed. GPU acceleration uses the QEMU egl-headless path: Intel and AMD render nodes go through the open-source Mesa driver, Nvidia through its proprietary driver (see the FAQ). Without a usable GPU it falls back to software rendering, which works but is slow.
 
 ## FAQ 💬
 
@@ -79,18 +94,7 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
 
   - Click through the installer to install Flex to the persistent disk, then run through OOBE.
 
-  Subsequent restarts auto-detect the installed state and boot you straight to the Flex login screen.
-
-### How do I password-protect the viewer?
-
-  By default the viewer on port 8006 is open to anyone who can reach it. Set `PROTECT` to require a login (HTTP basic auth). The default credentials are `Docker` / `admin`, so override them with `USERNAME` and `PASSWORD`:
-
-  ```yaml
-  environment:
-    PROTECT: "Y"
-    USERNAME: "admin"
-    PASSWORD: "your-password"
-  ```
+  Enjoy your brand new machine, and don't forget to star this repo!
 
 ### How do I select the channel?
 
@@ -149,7 +153,7 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
   ```
 
 > [!TIP]
-> This can also be used to resize the existing disk to a larger capacity without any data loss.
+> This can also be used to resize an existing disk to a larger capacity without any data loss.
 >
 > However afterwards you will need to run the following command from the host, with the container stopped:
 >
@@ -167,6 +171,17 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
   environment:
     RAM_SIZE: "8G"
     CPU_CORES: "4"
+  ```
+
+### How do I password-protect the viewer?
+
+  By default the viewer on port 8006 is open to anyone who can reach it. Set `PROTECT` to require a login (HTTP basic auth). The default credentials are `Docker` / `admin`, so override them with `USERNAME` and `PASSWORD`:
+
+  ```yaml
+  environment:
+    PROTECT: "Y"
+    USERNAME: "admin"
+    PASSWORD: "your-password"
   ```
 
 ### How do I let the host reclaim unused memory?
@@ -337,9 +352,9 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
     - 'c *:* rwm'
   ```
 
-### How do I pass-through a USB device?
+### How do I pass through a USB device?
 
-  To pass-through a USB device, first look up its vendor and product id via the `lsusb` command, then add them to your compose file like this:
+  To pass through a USB device, first look up its vendor and product IDs via the `lsusb` command, then add them to your compose file like this:
 
   ```yaml
   environment:
@@ -372,7 +387,7 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
 
   - you enabled "nested virtualization" if you are running the container inside a virtual machine.
 
-  - you are not using a cloud provider, as most of them do not allow nested virtualization for their VPS's.
+  - you are not using a cloud provider, as most of them do not allow nested virtualization for their VPSs.
 
   If you did not receive any error from `kvm-ok` but the container still complains about a missing KVM device, it could help to add `privileged: true` to your compose file (or `sudo` to your `docker` command) to rule out any permission issue.
 
@@ -390,19 +405,23 @@ kubectl apply -f https://raw.githubusercontent.com/forkymcforkface/chromeos/main
 
 ### Is this project legal?
 
-  Yes, this project contains only open-source code and does not distribute any copyrighted material. Every recovery image is downloaded directly from Google's CDN at container startup, under your own licensing relationship with Google. So under all applicable laws, this project will be considered legal.
+  Yes, this project contains only open-source code and does not distribute any copyrighted material. Every recovery image is downloaded directly from Google's CDN, under your own licensing relationship with Google. 
+
+ ## Acknowledgements 🙏
+
+Special thanks to [forkymcforkface](https://github.com/forkymcforkface), this project would not exist without his invaluable work.
 
 ## Stars 🌟
-[![Stars](https://starchart.cc/forkymcforkface/chromeos.svg?variant=adaptive)](https://starchart.cc/forkymcforkface/chromeos)
+[![Stargazers](https://raw.githubusercontent.com/star-stats/stars/refs/heads/data/charts/dockur-chromeos.svg)](https://github.com/dockur/chromeos/stargazers)
 
 ## Disclaimer ⚖️
 
 *The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Google LLC.*
 
-[build_url]: https://github.com/forkymcforkface/chromeos/
-[hub_url]: https://hub.docker.com/r/forkymcforkface/chromeos/
+[build_url]: https://github.com/dockur/chromeos/
+[hub_url]: https://hub.docker.com/r/dockurr/chromeos/
 
-[Build]: https://github.com/forkymcforkface/chromeos/actions/workflows/build.yml/badge.svg?v=1
-[Size]: https://img.shields.io/docker/image-size/forkymcforkface/chromeos/latest?color=066da5&label=size&v=1
-[Pulls]: https://img.shields.io/docker/pulls/forkymcforkface/chromeos.svg?style=flat&label=pulls&logo=docker&v=1
-[Version]: https://img.shields.io/docker/v/forkymcforkface/chromeos/latest?arch=amd64&sort=semver&color=066da5&v=1
+[Build]: https://github.com/dockur/chromeos/actions/workflows/build.yml/badge.svg?v=1
+[Size]: https://img.shields.io/docker/image-size/dockurr/chromeos/latest?color=066da5&label=size&v=1
+[Pulls]: https://img.shields.io/docker/pulls/dockurr/chromeos.svg?style=flat&label=pulls&logo=docker&v=1
+[Version]: https://img.shields.io/docker/v/dockurr/chromeos/latest?arch=amd64&sort=semver&color=066da5&v=1
