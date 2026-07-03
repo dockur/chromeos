@@ -4,9 +4,12 @@ services:
     container_name: chromeos
     environment:
       VERSION: "stable"
-      GPU: "Y"
+      GPU: "N"
       FORCE_HOST_CURSOR: "Y"
       KEEP_AWAKE: "N"
+      RAM_SIZE: "half"
+      DISK_SIZE: "max"
+      CPU_CORES: "max"
     devices:
       - /dev/kvm
       - /dev/net/tun
@@ -16,10 +19,7 @@ services:
       - NET_ADMIN
     ports:
       - 8006:8006
-      - 5900:5900/tcp
-      - 5900:5900/udp
     volumes:
       - ./chromeos:/storage
-      - /dev/dri:/dev/dri:rw
     restart: always
     stop_grace_period: 2m
