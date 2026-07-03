@@ -27,7 +27,7 @@ spec:
         app: chromeos
     spec:
       containers:
-      - name: chromeos
+        name: chromeos
         image: dockurr/chromeos
         env:
         - name: VERSION
