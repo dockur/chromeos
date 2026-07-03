@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
     paths:
       - .github/readme.md
       - .github/README.md
