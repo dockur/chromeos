@@ -219,7 +219,7 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
   ```yaml
   services:
     chromeos:
-      image: forkymcforkface/chromeos
+      image: dockurr/chromeos
       runtime: nvidia
       environment:
         GPU: "Y"
