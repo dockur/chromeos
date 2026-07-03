@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - readme.md
-      - README.md
+      - .github/readme.md
+      - .github/README.md
       - .github/workflows/hub.yml
 
 jobs:
@@ -24,4 +24,4 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_REPO }}
           short-description: ${{ github.event.repository.description }}
-          readme-filepath: ./readme.md
+          readme-filepath: ./.github/readme.md
