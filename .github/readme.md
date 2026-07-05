@@ -12,15 +12,20 @@
 
 </div></h1>
 
-ChromeOS Flex inside a Docker container.
+ChromeOS Flex in a Docker container.
 
 ## Features ✨
 
- - KVM acceleration
- - Web-based viewer
- - Audio support
- - GPU acceleration
- - Automatic download
+- Runs ChromeOS Flex inside a Docker container
+- Automatic download of the recovery image
+- Web-based viewer for controlling the VM
+- Near-native performance with KVM acceleration
+- Customizable CPU, memory, and storage allocation
+- Auto-detects Intel, AMD, and Nvidia GPUs
+- Dynamic memory allocation with memory ballooning
+- Supports audio streaming to the browser
+- USB passthrough and host folder sharing
+- Supports bridge, user-mode, macvlan, and macvtap networking
 
 ## Usage 🐳
 
