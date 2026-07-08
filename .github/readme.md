@@ -25,7 +25,7 @@ ChromeOS Flex in a Docker container.
 - Dynamic memory allocation with memory ballooning
 - Supports audio streaming to the browser
 - USB passthrough and host folder sharing
-- Supports bridge, user-mode, macvlan, and macvtap networking
+- Supports NAT, user-mode, macvlan, and macvtap networking
 
 ## Usage 🐳
 
