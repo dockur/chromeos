@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${APP:="ChromeOSFlex"}"
-: "${PLATFORM:="x64"}"
-: "${SUPPORT:="https://github.com/forkymcforkface/chromeos"}"
-: "${VERSION:="stable"}"
+: "${LOSSY:="N"}"
+: "${TABLET:="Y"}"
+: "${BOOT_MODE:="uefi"}"
+: "${FORCE_HOST_CURSOR:="Y"}"
 
 BOOT_DESC=" ChromeOS Flex (${VERSION,,})"
 
-: "${BOOT_MODE:="uefi"}"
-
 gpu="${GPU:-}"
 gpu_vendor=""
+
 case "${gpu,,}" in
   ""|n|no|0|false|off) GPU="" ;;
   y|yes|1|true|on|auto) GPU="Y" ;;
@@ -57,10 +56,6 @@ if [ -n "$GPU" ]; then
   esac
   info "Hardware rendering on $gpu_name render node $RENDERNODE."
 fi
-
-: "${FORCE_HOST_CURSOR:="Y"}"
-: "${LOSSY:="N"}"
-: "${TABLET:="Y"}"
 
 LOSSY_OPT=""
 [[ "${LOSSY^^}" =~ ^Y ]] && LOSSY_OPT=",lossy=on"
