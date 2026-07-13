@@ -13,11 +13,11 @@ if [[ "$VERSION_LC" =~ ^https?:// ]]; then
   VERSION_LC="custom"
 else
   case "$VERSION_LC" in
-    stable)  VERSION_FILTER="STABLE" ;;
-    ltc)     VERSION_FILTER="LTC" ;;
-    ltr)     VERSION_FILTER="LTR" ;;
-    beta)    VERSION_FILTER="BETA" ;;
-    *)       error "Unknown VERSION=$VERSION (use: stable, ltc, ltr, beta, or a direct URL)" && exit 64 ;;
+    stable) VERSION_FILTER="STABLE" ;;
+    ltc) VERSION_FILTER="LTC" ;;
+    ltr) VERSION_FILTER="LTR" ;;
+    beta) VERSION_FILTER="BETA" ;;
+    *) error "Unknown VERSION=$VERSION (use: stable, ltc, ltr, beta, or a direct URL)" && exit 64 ;;
   esac
 fi
 
@@ -28,8 +28,27 @@ if ! makeDir "$FLEX_DIR"; then
   error "Failed to create directory \"$FLEX_DIR\"!" && exit 33
 fi
 
-# A populated GPT (EFI PART magic at LBA 1) signals "Flex is already installed" — no separate flag file.
-if [ -s "$DATA_IMG" ] && dd if="$DATA_IMG" bs=512 skip=1 count=1 2>/dev/null | head -c 8 | grep -q "EFI PART"; then
+# A valid ChromeOS GPT layout signals that Flex is already installed.
+isInstalledDisk() {
+  local table
+
+  [ -s "$DATA_IMG" ] || return 1
+
+  dd if="$DATA_IMG" bs=512 skip=1 count=1 2>/dev/null |
+    head -c 8 |
+    grep -q "EFI PART" || return 1
+
+  table=$(sfdisk -d "$DATA_IMG" 2>/dev/null) || return 1
+
+  grep -Fq 'name="STATE"' <<< "$table" || return 1
+  grep -Fq 'name="KERN-A"' <<< "$table" || return 1
+  grep -Fq 'name="ROOT-A"' <<< "$table" || return 1
+  grep -Fq 'name="EFI-SYSTEM"' <<< "$table" || return 1
+
+  return 0
+}
+
+if isInstalledDisk; then
 
   # Toggle /syslinux/default.cfg between chromeos-vhd (verified) and chromeos-hd (rw rootfs) via mtools — no mount/loop/SYS_ADMIN needed.
   if [[ "${DEV_MODE:-}" =~ ^[YyNn] ]]; then
@@ -77,6 +96,8 @@ if [ -s "$FLEX_DIR/boot.img" ]; then
   BOOT_MODE="uefi"
   return 0
 fi
+
+zipsize="0"
 
 if [ -n "$VERSION_FILTER" ]; then
   info "Fetching ChromeOS Flex manifest ($VERSION_LC channel)..."
@@ -130,12 +151,17 @@ else
   PROGRESS_FLAG="--progress=dot:giga"
 fi
 
-html "Downloading ChromeOS Flex $version..."
+msg="Downloading ChromeOS Flex $version"
+html "$msg..."
 info "Downloading $base..."
 
 rm -f "$zip_dest"
+/run/progress.sh "$zip_dest" "${zipsize:-0}" "$msg ([P])..." &
+
 rc=0
-wget "$url" -O "$zip_dest" --continue --timeout=30 --no-http-keep-alive --show-progress "$PROGRESS_FLAG" -q || rc=$?
+{ wget "$url" -O "$zip_dest" --continue --timeout=30 --no-http-keep-alive --show-progress "$PROGRESS_FLAG" -q; rc=$?; } || :
+
+fKill "progress.sh"
 
 if (( rc != 0 )) || [ ! -s "$zip_dest" ]; then
   error "Failed to download ChromeOS Flex image (wget rc=$rc)" && exit 60
@@ -147,6 +173,7 @@ if [ "$actual_size" -lt 100000000 ]; then
   error "Downloaded file is suspiciously small ($actual_size bytes)" && exit 60
 fi
 
+html "Download finished successfully..."
 info "Extracting $base..."
 html "Extracting image..."
 
@@ -154,7 +181,18 @@ tmp="$FLEX_DIR/extract"
 rm -rf "$tmp"
 mkdir -p "$tmp"
 
-if ! 7z x -y "$zip_dest" -o"$tmp" > /dev/null; then
+extract_size=$(7z l -slt "$zip_dest" 2>/dev/null |
+  awk -F' = ' '/^Size = [0-9]+$/ && $2 > max { max = $2 } END { print max + 0 }')
+
+/run/progress.sh "$tmp" "${extract_size:-0}" "Extracting image ([P])..." &
+
+rc=0
+{ 7z x -y "$zip_dest" -o"$tmp" > /dev/null; rc=$?; } || :
+
+fKill "progress.sh"
+
+if (( rc != 0 )); then
+  rm -rf "$tmp"
   error "Failed to extract $base" && exit 32
 fi
 
