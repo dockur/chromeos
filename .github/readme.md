@@ -279,14 +279,14 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
 
 ### How do I enable audio?
 
-  Audio is off by default. To stream the guest's audio to the browser, set:
+  Audio is disabled by default. To stream the guest's audio to the browser, add the following environment variable:
 
   ```yaml
   environment:
     AUDIO: "Y"
   ```
 
-  Then tick the **Audio** box under Settings → Advanced in the noVNC toolbar. Audio only streams while that box is checked, so it adds no bandwidth when unused.
+  Then enable **Audio** under **Settings → Advanced** in the web viewer. Audio is only sent while enabled, so it uses no extra bandwidth otherwise.
 
 ### How do I reduce bandwidth for remote noVNC sessions?
 
