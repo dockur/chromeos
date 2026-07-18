@@ -3,7 +3,6 @@ set -Eeuo pipefail
 
 : "${LOSSY:="N"}"
 : "${TABLET:="Y"}"
-: "${BOOT_MODE:="uefi"}"
 : "${FORCE_HOST_CURSOR:="Y"}"
 
 BOOT_DESC=" ChromeOS Flex (${VERSION,,})"
@@ -81,10 +80,4 @@ fi
 if [[ "${KEEP_AWAKE:-N}" =~ ^[Yy] ]] && [ -x /run/keep_awake.sh ]; then
   nohup /run/keep_awake.sh >/dev/null 2>&1 &
   disown
-fi
-
-if [[ "${AUDIO:-N}" =~ ^[Yy] ]] && [ -x /run/audio.sh ]; then
-  bash /run/audio.sh || true
-  ARGUMENTS="${ARGUMENTS:-} -audiodev wav,id=snd,path=/run/audio.fifo,out.frequency=48000,out.channels=2,out.format=s16 -device intel-hda -device hda-output,audiodev=snd"
-  export ARGUMENTS
 fi

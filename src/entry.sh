@@ -2,10 +2,13 @@
 set -Eeuo pipefail
 
 : "${APP:="ChromeOSFlex"}"
-: "${SHUTDOWN:="Y"}"
-: "${TIMEOUT:="60"}"
-: "${PLATFORM:="x64"}"
 : "${SUPPORT:="https://github.com/forkymcforkface/chromeos"}"
+
+: "${AUDIO:="N"}"
+: "${SHUTDOWN:="Y"}"
+: "${TIMEOUT:="115"}"
+: "${PLATFORM:="x64"}"
+: "${BOOT_MODE:="uefi"}"
 
 cd /run
 
@@ -17,6 +20,7 @@ cd /run
 . install.sh    # Download the image
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
+. audio.sh      # Initialize audio
 . network.sh    # Initialize network
 . boot.sh       # Configure boot
 . proc.sh       # Initialize processor
@@ -36,10 +40,17 @@ if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
-"${cmd[@]}" ${ARGS:+ $ARGS} &
+if ! interactive; then
+  "${cmd[@]}" ${ARGS:+ $ARGS} &
+else
+  startConsole
+  setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
+fi
 
+pid=$!
 rc=0
-wait $! || rc=$?
+
+wait "$pid" || rc=$?
 [ -f "$QEMU_END" ] && exit "$rc"
 
 sleep 1 & wait $!
