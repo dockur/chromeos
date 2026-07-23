@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 FROM scratch AS runner
-COPY --from=qemux/qemu:7.37 / /
+COPY --from=qemux/qemu:7.39 / /
 
 ARG VERSION_ARG="0.0"
 ARG DEBCONF_NOWARNINGS="yes"
@@ -27,14 +27,7 @@ RUN <<'EOF'
   set -eu
 
   sed -i \
-    -e 's|websocket=$WSS_PORT -vga|websocket=$WSS_PORT${LOSSY_OPT:-} -vga|' \
-    -e 's|"-display vnc=:$port -vga $VGA"|"-display vnc=:$port${LOSSY_OPT:-} -vga $VGA"|' \
-    -e 's| -vnc :$port,websocket=$WSS_PORT"| -vnc :$port,websocket=$WSS_PORT${LOSSY_OPT:-}"|' \
-    -e 's| -vnc :$port"| -vnc :$port${LOSSY_OPT:-}"|' \
-    /run/display.sh
-
-  sed -i \
-    's|if ! enabled "$GPU" || isAmdCpu || \[\[ "$ARCH" != "amd64" \]\]; then|if ! enabled "$GPU" || [[ "$ARCH" != "amd64" ]]; then|' \
+    's@if ! enabled "$GPU" || isAmdCpu || \[\[ "$ARCH" != "amd64" \]\]; then@if ! enabled "$GPU" || [[ "$ARCH" != "amd64" ]]; then@' \
     /run/display.sh
 
   sed -i \
@@ -45,11 +38,6 @@ RUN <<'EOF'
     's@USB_OPTS="-device $USB"@& \&\& { [[ "${TABLET:-Y}" =~ ^[Yy] ]] \&\& USB_OPTS+=" -device usb-tablet" || USB_OPTS+=" -device usb-mouse"; }@' \
     /run/config.sh
 
-  [ "$(grep -c 'LOSSY_OPT' /run/display.sh)" -ge 4 ] || {
-    echo "patch failed: expected 4 LOSSY_OPT sites in display.sh" >&2
-    exit 1
-  }
-
   grep -q 'usb-mouse' /run/config.sh || {
     echo "patch failed: TABLET conditional not injected into config.sh" >&2
     exit 1
@@ -59,6 +47,8 @@ RUN <<'EOF'
     echo "patch failed: AMD GPU gate not removed from display.sh" >&2
     exit 1
   }
+
+  bash -n /run/display.sh /run/config.sh
 EOF
 
 VOLUME /storage

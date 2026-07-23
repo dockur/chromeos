@@ -5,8 +5,9 @@ set -Eeuo pipefail
 : "${SUPPORT:="https://github.com/forkymcforkface/chromeos"}"
 
 : "${AUDIO:="N"}"
+: "${LOSSY:="N"}"
 : "${SHUTDOWN:="Y"}"
-: "${TIMEOUT:="115"}"
+: "${TIMEOUT:="105"}"
 : "${PLATFORM:="x64"}"
 : "${BOOT_MODE:="uefi"}"
 
@@ -44,7 +45,7 @@ if ! interactive; then
   "${cmd[@]}" ${ARGS:+ $ARGS} &
 else
   startConsole
-  setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
+  startQemu "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
 pid=$!
