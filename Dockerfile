@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 FROM scratch AS runner
-COPY --from=qemux/qemu:7.39 / /
+COPY --from=qemux/qemu:7.40 / /
 
 ARG VERSION_ARG="0.0"
 ARG DEBCONF_NOWARNINGS="yes"
