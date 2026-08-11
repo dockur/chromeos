@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 : "${APP:="ChromeOS Flex"}"
-: "${SUPPORT:="https://github.com/forkymcforkface/chromeos"}"
+: "${SUPPORT:="https://github.com/dockur/chromeos"}"
 
 : "${AUDIO:="N"}"
 : "${LOSSY:="N"}"
@@ -37,7 +37,7 @@ trap - ERR
 
 cmd=(qemu-system-x86_64)
 version=$("${cmd[@]}" --version | awk 'NR==1 { print $4 }')
-info "Booting ChromeOS Flex using QEMU v$version..." && echo
+info "Booting $APP using QEMU v$version..." && echo
 
 if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
