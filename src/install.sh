@@ -85,7 +85,7 @@ if isInstalledDisk; then
     set -e
   fi
 
-  info "Booting ChromeOS Flex from data disk."
+  info "Booting $APP from data disk."
 
   BOOT="none"
   STORAGE="$FLEX_DIR"
@@ -147,7 +147,7 @@ downloadImage() {
   local version="$4"
   local expected="${5:-0}"
   local connections="${CONNECTIONS:-1}"
-  local msg="Downloading ChromeOS Flex $version"
+  local msg="Downloading $APP $version"
 
   info "Downloading $base..."
 
@@ -168,7 +168,7 @@ downloadImage() {
 zipsize="0"
 
 if [ -n "$VERSION_FILTER" ]; then
-  info "Fetching ChromeOS Flex manifest ($VERSION_LC channel)..."
+  info "Fetching $APP manifest ($VERSION_LC channel)..."
 
   manifest="$FLEX_DIR/manifest.json"
 
@@ -199,7 +199,7 @@ if [ -n "$VERSION_FILTER" ]; then
   ' "$manifest" 2>/dev/null || echo "")
 
   if [ -z "$url" ]; then
-    error "No ChromeOS Flex image found for channel \"$VERSION_FILTER\"" && exit 60
+    error "No $APP image found for channel \"$VERSION_FILTER\"" && exit 60
   fi
 
   version=$(jq -r --arg c "$VERSION_FILTER" '
@@ -269,7 +269,7 @@ img=$(find "$tmp" -type f -iname "*.bin" -print -quit)
 if [ ! -s "$img" ]; then
   rm -rf "$tmp"
 
-  error "Could not find ChromeOS Flex image in archive"
+  error "Could not find $APP image in archive"
   exit 32
 fi
 
@@ -282,10 +282,10 @@ setOwner "$FLEX_DIR/boot.img" ||
   warn "failed to set owner on installer image"
 
 BOOT_MODE="uefi"
-BOOT="$FLEX_DIR/boot.img"
 STORAGE="$FLEX_DIR"
-BOOT_DESC=" ChromeOS Flex $version"
+BOOT="$FLEX_DIR/boot.img"
+BOOT_DESC=" $APP $version"
 
-info "ChromeOS Flex installer ready at $BOOT"
+info "$APP installer ready at $BOOT"
 
 return 0
