@@ -5,7 +5,7 @@ set -Eeuo pipefail
 : "${TABLET:="Y"}"
 : "${FORCE_HOST_CURSOR:="Y"}"
 
-BOOT_DESC=" ChromeOS Flex (${VERSION,,})"
+BOOT_DESC=" $APP (${VERSION,,})"
 
 gpu="${GPU:-}"
 gpu_vendor=""
