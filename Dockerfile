@@ -54,10 +54,10 @@ EOF
 VOLUME /storage
 EXPOSE 5900 8006
 
+ENV GPU="Y"
 ENV RAM_SIZE="4G"
 ENV CPU_CORES="2"
 ENV DISK_SIZE="64G"
 ENV VERSION="stable"
-ENV GPU="Y"
 
 ENTRYPOINT ["/usr/bin/tini", "-s", "/run/entry.sh"]
