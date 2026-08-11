@@ -20,6 +20,7 @@ cd /run
 . init.sh       # Initialize system
 . memory.sh     # Check memory
 . server.sh     # Start webserver
+. download.sh   # Load functions
 . define.sh     # ChromeOS parameters
 . install.sh    # Download the image
 . disk.sh       # Initialize disks
