@@ -240,6 +240,10 @@ tmp="$FLEX_DIR/extract"
 rm -rf "$tmp"
 mkdir -p "$tmp"
 
+if [[ "$(stat -f -c %T "$tmp")" == "btrfs" ]]; then
+  { chattr +C "$tmp"; } || :
+fi
+
 extract_size=$(7z l -slt "$zip_dest" 2>/dev/null |
   awk -F' = ' '/^Size = [0-9]+$/ && $2 > max { max = $2 } END { print max + 0 }')
 
@@ -271,6 +275,10 @@ if [ ! -s "$img" ]; then
 
   error "Could not find $APP image in archive"
   exit 32
+fi
+
+if [[ "$(stat -f -c %T "$img")" == "btrfs" && "$(lsattr "$img")" != *"C"* ]]; then
+  error "Failed to disable COW for $APP image $img on BTRFS filesystem!"
 fi
 
 mv "$img" "$FLEX_DIR/boot.img"
