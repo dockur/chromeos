@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 : "${LOSSY:="N"}"
 : "${TABLET:="Y"}"
-: "${FORCE_HOST_CURSOR:="Y"}"
+: "${FORCE_HOST_CURSOR:="N"}"
 
 BOOT_DESC=" $APP (${VERSION,,})"
 
@@ -60,24 +60,28 @@ LOSSY_OPT=""
 [[ "${LOSSY^^}" =~ ^Y ]] && LOSSY_OPT=",lossy=on"
 export LOSSY_OPT
 
-# Show the browser's cursor over the noVNC canvas — ChromeOS hides its own cursor in touchscreen mode (which we are, since usb-tablet sends absolute coords).
+# Show the browser's cursor over the noVNC canvas — ChromeOS hides its own cursor
+# in touchscreen mode (which we are, since usb-tablet sends absolute coords).
 CSS_MARKER='/* chromeos-flex */'
 CSS_RULE='#noVNC_container, #noVNC_container * { cursor: default !important; }'
 BASE_CSS='/usr/share/novnc/app/styles/base.css'
 
 if [ -f "$BASE_CSS" ]; then
+
   sed -i "\|$CSS_MARKER|,+1d" "$BASE_CSS" 2>/dev/null || true
-  if [[ "${FORCE_HOST_CURSOR^^}" =~ ^[Yy] ]]; then
+
+  if enabled "${TABLET:-Y}" || enabled "${FORCE_HOST_CURSOR:-N}"; then
     printf '\n%s\n%s\n' "$CSS_MARKER" "$CSS_RULE" >> "$BASE_CSS"
   fi
+
 fi
 
-if [[ "${TABLET^^}" =~ ^Y ]] && [ -x /run/mouse_fix.sh ]; then
+if enabled "${TABLET:-Y}" && [ -x /run/mouse_fix.sh ]; then
   nohup /run/mouse_fix.sh >/dev/null 2>&1 &
   disown
 fi
 
-if [[ "${KEEP_AWAKE:-N}" =~ ^[Yy] ]] && [ -x /run/keep_awake.sh ]; then
+if enabled "${KEEP_AWAKE:-N}" && [ -x /run/keep_awake.sh ]; then
   nohup /run/keep_awake.sh >/dev/null 2>&1 &
   disown
 fi
