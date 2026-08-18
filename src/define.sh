@@ -75,6 +75,8 @@ fi
 if enabled "${TABLET:-Y}" && [ -x /run/mouse_fix.sh ]; then
   nohup /run/mouse_fix.sh >/dev/null 2>&1 &
   disown
+else
+  MOUSE="usb-mouse"
 fi
 
 if enabled "${KEEP_AWAKE:-N}" && [ -x /run/keep_awake.sh ]; then
