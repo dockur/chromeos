@@ -359,7 +359,7 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
 
 ### Are these all available options?
 
-  No. For a complete overview of all supported settings, see the [environment variables](https://github.com/qemus/qemu/docs/environment.md) page.
+  No. For a complete overview of all supported settings, see the [environment variables](https://github.com/qemus/qemu/blob/master/docs/environment.md) page.
 
 ### How do I verify that KVM is available?
 
