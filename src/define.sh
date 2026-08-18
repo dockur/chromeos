@@ -56,10 +56,6 @@ if [ -n "$GPU" ]; then
   info "Hardware rendering on $gpu_name render node $RENDERNODE."
 fi
 
-LOSSY_OPT=""
-[[ "${LOSSY^^}" =~ ^Y ]] && LOSSY_OPT=",lossy=on"
-export LOSSY_OPT
-
 # Show the browser's cursor over the noVNC canvas — ChromeOS hides its own cursor
 # in touchscreen mode (which we are, since usb-tablet sends absolute coords).
 CSS_MARKER='/* chromeos-flex */'
