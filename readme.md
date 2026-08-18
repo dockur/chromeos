@@ -38,23 +38,16 @@ services:
     container_name: chromeos
     environment:
       VERSION: "stable"
-      GPU: "Y"
-      FORCE_HOST_CURSOR: "Y"
-      KEEP_AWAKE: "N"
     devices:
+      - /dev/dri
       - /dev/kvm
       - /dev/net/tun
-    device_cgroup_rules:
-      - "c 226:* rwm"
     cap_add:
       - NET_ADMIN
     ports:
       - 8006:8006
-      - 5900:5900/tcp
-      - 5900:5900/udp
     volumes:
       - ./chromeos:/storage
-      - /dev/dri:/dev/dri:rw
     restart: always
     stop_grace_period: 2m
 ```
@@ -62,7 +55,7 @@ services:
 ##### Docker CLI:
 
 ```bash
-docker run -it --rm --name chromeos -e "VERSION=stable" -p 8006:8006 --device=/dev/kvm --device=/dev/net/tun --device-cgroup-rule="c 226:* rwm" --cap-add NET_ADMIN -v "${PWD:-.}/chromeos:/storage" -v /dev/dri:/dev/dri --stop-timeout 120 docker.io/dockurr/chromeos
+docker run -it --rm --name chromeos -e "VERSION=stable" -p 8006:8006 --device=/dev/dri --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/chromeos:/storage" --stop-timeout 120 docker.io/dockurr/chromeos
 ```
 
 ##### Kubernetes:
@@ -84,9 +77,6 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
 
 > [!NOTE]
 > Docker Desktop on Linux, macOS, and Windows 10 does not currently provide KVM access to containers and is therefore not supported.
-
-> [!IMPORTANT]
-> For best performance, run on a host with a GPU and `/dev/dri/` exposed. GPU acceleration uses the QEMU egl-headless path: Intel and AMD render nodes go through the open-source Mesa driver, Nvidia through its proprietary driver (see the FAQ). Without a usable GPU it falls back to software rendering, which works but is slow.
 
 ## FAQ 💬
 
