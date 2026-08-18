@@ -239,17 +239,6 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
 
   Or with the CLI: add `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all`. The render node is auto-detected by vendor, so no card-specific configuration is needed. If both an Nvidia and an Intel/AMD GPU are present, the Nvidia card is preferred once its EGL libraries are available; force the choice either way with `GPU: "nvidia"` / `GPU: "intel"`, or pin a node with `RENDERNODE`.
 
-### How does the cursor work?
-
-  ChromeOS Flex sees the input device as a touchscreen and doesn't render a cursor. noVNC has an optional "Show dot when no cursor" setting, but the dot is small and easy to miss. By default the container overrides this with a CSS rule so the browser's normal cursor shows through:
-
-  ```yaml
-  environment:
-    FORCE_HOST_CURSOR: "Y"
-  ```
-
-  Set it to `"N"` to disable the override.
-
 ### How do I right-click?
 
   ChromeOS treats the input device as a touchscreen, so right-click events are ignored. To open a context menu, **left-click and hold for about half a second**. The touch UI interprets a long-press as a context-menu gesture.
@@ -261,7 +250,6 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
   ```yaml
   environment:
     TABLET: "N"
-    FORCE_HOST_CURSOR: "N"
   ```
 
   This swaps the tablet for a `usb-mouse`, so ChromeOS shows its own cursor and right-click works. The trade-off is pointer tracking: ChromeOS scales the relative movements noVNC sends, so the cursor drifts away from the real pointer position over distance and clicks land off-target. This mode suits a direct VNC client more than the browser viewer; for noVNC, the default tablet mode is recommended.
@@ -368,6 +356,10 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
   devices:
     - /dev/bus/usb
   ```
+
+### Are these all available options?
+
+  No. For a complete overview of all supported settings, see the [environment variables](https://github.com/qemus/qemu/docs/environment.md) page.
 
 ### How do I verify that KVM is available?
 
