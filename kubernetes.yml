@@ -36,6 +36,8 @@ spec:
           value: "stable"
         - name: DISK_SIZE
           value: "64G"
+        - name: GPU
+          value: "N"
         ports:
           - containerPort: 8006
             name: http
@@ -55,8 +57,6 @@ spec:
           name: dev-kvm
         - mountPath: /dev/net/tun
           name: dev-tun
-        - mountPath: /dev/dri
-          name: dev-dri
       terminationGracePeriodSeconds: 120
       volumes:
       - name: storage
@@ -70,10 +70,6 @@ spec:
           path: /dev/net/tun
           type: CharDevice
         name: dev-tun
-      - hostPath:
-          path: /dev/dri
-          type: CharDevice
-        name: dev-dri
 ---
 apiVersion: v1
 kind: Service

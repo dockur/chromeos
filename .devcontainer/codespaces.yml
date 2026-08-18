@@ -3,9 +3,9 @@ services:
     image: dockurr/chromeos
     container_name: chromeos
     environment:
+      GPU: "N"
       VERSION: "stable"
     devices:
-      - /dev/dri
       - /dev/kvm
       - /dev/net/tun
     cap_add:
