@@ -169,66 +169,6 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
     CPU_CORES: "4"
   ```
 
-### How do I password-protect the viewer?
-
-  By default the viewer on port 8006 is open to anyone who can reach it. Set `PROTECT` to require a login (HTTP basic auth). The default credentials are `Docker` / `admin`, so override them with `USERNAME` and `PASSWORD`:
-
-  ```yaml
-  environment:
-    PROTECT: "Y"
-    USERNAME: "admin"
-    PASSWORD: "your-password"
-  ```
-
-### How do I let the host reclaim unused memory?
-
-  By default the VM holds the full `RAM_SIZE` for its entire lifetime. Set `BALLOONING` to enable dynamic memory ballooning, which lets the host reclaim guest RAM that isn't in use:
-
-  ```yaml
-  environment:
-    BALLOONING: "Y"
-  ```
-
-  The target can be tuned with `BALLOONING_MIN_MEM` (default `33%`) and `BALLOONING_RAM_THRESHOLD` (default `80.0`).
-
-### How does GPU acceleration work?
-
-  The container expects the host's `/dev/dri/` to be bind-mounted in. At startup, the entrypoint scans for a usable render node and hands it to QEMU as the VirGL backend (`-display egl-headless,rendernode=...` + `virtio-vga-gl`). Both the `volumes: - /dev/dri:/dev/dri:rw` mount and the `device_cgroup_rules: - "c 226:* rwm"` rule in the example compose are required for this. Intel and AMD render nodes work out of the box; for Nvidia see below. If no usable render node is found, the container falls back to software rendering.
-
-  The `GPU` setting accepts:
-
-  | Value | Effect |
-  |-------|--------|
-  | `Y` / `auto` | Auto-detect (default); prefers a ready Nvidia node, otherwise Intel/AMD |
-  | `N` | Off — software rendering (3–15 fps) |
-  | `intel` / `amd` / `nvidia` | Force a specific vendor, useful on multi-GPU hosts |
-
-  For finer control, set `RENDERNODE` to a specific node (e.g. `/dev/dri/renderD128`). On a miss the container logs exactly what was found and what to fix, then falls back to software rendering.
-
-### How do I use an Nvidia GPU?
-
-  Nvidia cards render through the same egl-headless path, with two extra requirements:
-
-  - The host must load `nvidia-drm` with `modeset=1` (add `options nvidia_drm modeset=1` to a file in `/etc/modprobe.d/`, run `update-initramfs -u`, then reboot). Without it the card is invisible to the GBM/EGL backend the container uses.
-  - Run the container with the Nvidia runtime and the `graphics` capability so the driver's EGL libraries are injected:
-
-  ```yaml
-  services:
-    chromeos:
-      image: dockurr/chromeos
-      runtime: nvidia
-      environment:
-        GPU: "Y"
-        NVIDIA_VISIBLE_DEVICES: "all"
-        NVIDIA_DRIVER_CAPABILITIES: "all"
-      device_cgroup_rules:
-        - "c 226:* rwm"
-      volumes:
-        - /dev/dri:/dev/dri:rw
-  ```
-
-  Or with the CLI: add `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=all`. The render node is auto-detected by vendor, so no card-specific configuration is needed. If both an Nvidia and an Intel/AMD GPU are present, the Nvidia card is preferred once its EGL libraries are available; force the choice either way with `GPU: "nvidia"` / `GPU: "intel"`, or pin a node with `RENDERNODE`.
-
 ### How do I right-click?
 
   ChromeOS treats the input device as a touchscreen, so right-click events are ignored. To open a context menu, **left-click and hold for about half a second**. The touch UI interprets a long-press as a context-menu gesture.
@@ -276,6 +216,41 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
   ```
 
   Trade-off: slight blurring on photos and gradients (invisible on UI text). Most useful when accessing the container over WAN or on bandwidth-constrained networks.
+
+### How do I password-protect the noVNC viewer?
+
+  By default the viewer on port 8006 is open to anyone who can reach it. Set `PROTECT` to require a login:
+
+  ```yaml
+  environment:
+    PROTECT: "Y"
+    USERNAME: "admin"
+    PASSWORD: "password"
+  ```
+
+### How do I enable GPU acceleration?
+
+  To enable hardware-accelerated graphics using an Intel or AMD GPU, add the following device to your compose file:
+
+  ```yaml
+  devices:
+    - /dev/dri
+  ```
+
+  For NVIDIA GPUs, the `NVIDIA Container Toolkit` must be installed on the host and the GPU must be exposed to the container:
+
+  ```yaml
+  environment:
+    NVIDIA_DRIVER_CAPABILITIES: "graphics"
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+              - gpu
+  ```
 
 ### How do I enable developer mode?
 
@@ -346,6 +321,17 @@ kubectl apply -f https://raw.githubusercontent.com/dockur/chromeos/master/kubern
   devices:
     - /dev/bus/usb
   ```
+
+### How do I let the host reclaim unused memory?
+
+  By default the VM holds the full `RAM_SIZE` for its entire lifetime. Set `BALLOONING` to enable dynamic memory ballooning, which lets the host reclaim guest RAM that isn't in use:
+
+  ```yaml
+  environment:
+    BALLOONING: "Y"
+  ```
+
+  The target can be tuned with `BALLOONING_MIN_MEM` (default `33%`) and `BALLOONING_RAM_THRESHOLD` (default `80.0`).
 
 ### Are these all available options?
 
