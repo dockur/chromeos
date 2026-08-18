@@ -5,6 +5,7 @@ set -Eeuo pipefail
 : "${APP:="ChromeOS Flex"}"
 : "${SUPPORT:="https://github.com/dockur/chromeos"}"
 
+: "${GPU:="Y"}"
 : "${AUDIO:="N"}"
 : "${LOSSY:="N"}"
 : "${SHUTDOWN:="Y"}"
