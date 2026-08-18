@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${PLATFORM:="x64"}"
 : "${APP:="ChromeOS Flex"}"
 : "${SUPPORT:="https://github.com/dockur/chromeos"}"
 
+: "${GPU:="Y"}"
 : "${AUDIO:="N"}"
 : "${LOSSY:="N"}"
 : "${SHUTDOWN:="Y"}"
 : "${TIMEOUT:="105"}"
-: "${PLATFORM:="x64"}"
+: "${RAM_MINIMUM:="2G"}"
 : "${BOOT_MODE:="uefi"}"
 : "${RAM_MINIMUM:="2G"}"
 : "${DISK_MINIMUM:="16G"}"
+: "${MOUSE:="usb-tablet"}"
 
 cd /run
 

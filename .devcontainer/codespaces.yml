@@ -4,17 +4,10 @@ services:
     container_name: chromeos
     environment:
       VERSION: "stable"
-      GPU: "N"
-      FORCE_HOST_CURSOR: "Y"
-      KEEP_AWAKE: "N"
-      RAM_SIZE: "half"
-      DISK_SIZE: "max"
-      CPU_CORES: "max"
     devices:
+      - /dev/dri
       - /dev/kvm
       - /dev/net/tun
-    device_cgroup_rules:
-      - "c 226:* rwm"
     cap_add:
       - NET_ADMIN
     ports:
