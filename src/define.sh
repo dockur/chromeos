@@ -5,8 +5,6 @@ set -Eeuo pipefail
 : "${KEEP_AWAKE:="N"}"
 : "${FORCE_HOST_CURSOR:="N"}"
 
-BOOT_DESC=" $APP (${VERSION,,})"
-
 # Show the browser's cursor over the noVNC canvas — ChromeOS hides its own cursor
 # in touchscreen mode (which we are, since usb-tablet sends absolute coords).
 CSS_MARKER='/* chromeos-flex */'
