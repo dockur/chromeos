@@ -21,7 +21,7 @@ ChromeOS Flex in a Docker container.
 - Web-based viewer for controlling the VM
 - Near-native performance with KVM acceleration
 - Customizable CPU, memory, and storage allocation
-- Auto-detects Intel, AMD, and Nvidia GPUs
+- Hardware-accelerated OpenGL and Vulkan graphics 
 - Dynamic memory allocation with memory ballooning
 - Supports audio streaming to the browser
 - USB passthrough and host folder sharing
